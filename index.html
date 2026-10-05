@@ -7,9 +7,7 @@
 <link rel="stylesheet" href="note-theme.css">
 <style>
 html,body{margin:0;height:100%;background:transparent;overflow:hidden;user-select:none;-webkit-user-select:none}
-#app{position:relative;height:100vh;padding:20px 16px 18px}
-#shell{height:100%}
-#shell .note{height:100%}
+#app{position:relative;padding:20px 16px 18px}
 header{-webkit-app-region:no-drag;cursor:move}
 
 /* ---------- focus card (not covered by note-theme.css) ---------- */
@@ -45,9 +43,12 @@ header{-webkit-app-region:no-drag;cursor:move}
 #list li .when.soon{color:#7a4e10;font-weight:700}
 #list li .when.overdue{color:#8a1c38;font-weight:700}
 
+/* ---------- list: capped height, scrolls internally past this ---------- */
+#list{max-height:238px}
+
 /* ---------- add row extras note-theme.css doesn't cover ---------- */
 .add{flex-wrap:wrap}
-.add-row{display:flex;gap:8px;align-items:center;flex:1 1 100%}
+.add-row{display:flex;gap:8px;align-items:center;flex:1 1 100%;flex-wrap:wrap}
 .prio{display:flex;gap:4px;background:var(--line);border-radius:10px;padding:4px;flex:none}
 .prio-btn{border:0;background:transparent;border-radius:8px;padding:6px 10px;font-size:15px;cursor:pointer;color:var(--ink-soft);font-family:var(--hand);min-width:30px;text-align:center;transition:background .15s,color .15s}
 .prio-btn.active{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.18)}
@@ -278,13 +279,22 @@ function render(){
   $('pill').textContent = n ? n + ' left' : 'all done';
   toggleAll.textContent = (S.expanded ? 'Show less' : 'Expand') + (S.tasks.length ? ` (${S.tasks.length})` : '');
   updateFocus(open[0]);
+  fitHeight();
+}
+
+/* ---------------- window height: always sized to what's actually on the note, not a guess ---------------- */
+function fitHeight(){
+  if(S.collapsed){ bridge.setHeight(170); return; }
+  requestAnimationFrame(() => {
+    const h = Math.ceil(note.getBoundingClientRect().height) + 38; // #app's own top+bottom padding
+    bridge.setHeight(h);
+  });
 }
 
 /* ---------------- concise / expanded ---------------- */
 function setExpanded(v){
   S.expanded = v;
   note.classList.toggle('is-expanded', v);
-  if(!S.collapsed) bridge.setHeight(v ? 560 : 320);
   persist(); render();
   setTimeout(reportRect, 260);
 }
@@ -344,7 +354,7 @@ function syncPets(){
 /* ---------------- tuck / untuck ---------------- */
 function setCollapsed(c){
   S.collapsed = c; app.classList.toggle('collapsed', c);
-  bridge.setHeight(c ? 170 : (S.expanded ? 560 : 320)); persist();
+  fitHeight(); persist();
   setTimeout(reportRect, 260);
 }
 $('tuck').onclick = () => setCollapsed(true);
