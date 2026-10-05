@@ -59,6 +59,8 @@ header{-webkit-app-region:no-drag;cursor:move}
 .petrow button.on{background:var(--ink);color:var(--paper)}
 .petrow .sep{flex:1}
 #sizerow{margin-top:2px}
+.quit-link{border:0;background:none;padding:0;font:inherit;font-size:13px;color:var(--ink-soft);opacity:.7;cursor:pointer;text-decoration:underline;margin-left:auto}
+.quit-link:hover{opacity:1}
 
 /* ---------- concise vs expanded ---------- */
 .note:not(.is-expanded) #list,
@@ -143,6 +145,7 @@ header{-webkit-app-region:no-drag;cursor:move}
         <span>Nudge me every <input type="number" id="nudge" min="0" max="480" step="5" aria-label="Minutes between nudges"> min</span>
         <label><input type="checkbox" id="sound"> Sounds</label>
         <label id="loginWrap"><input type="checkbox" id="login"> Start with Windows</label>
+        <button type="button" class="quit-link" id="quitApp" title="Exit the app completely">Quit Sneezy Note</button>
       </div>
 
       <div class="slip" id="slip" role="alertdialog" aria-live="assertive">
@@ -338,6 +341,7 @@ function setCollapsed(c){
 $('tuck').onclick = () => setCollapsed(true);
 $('pill').onclick = () => setCollapsed(false);
 $('quit').onclick = () => bridge.hide();
+$('quitApp').onclick = () => bridge.quit();
 
 /* tell the pets where the paper is, so they can sit on top of it */
 function reportRect(){
