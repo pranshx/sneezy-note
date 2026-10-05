@@ -1,0 +1,4 @@
+node_modules/
+dist/
+_backup_pre_v2/
+*.log

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sneezy Note pets</title>
+<style>
+  html,body{margin:0;height:100%;background:transparent;overflow:hidden}
+  @font-face{font-family:'Caveat';src:url('../fonts/caveat-latin-700-normal.woff2') format('woff2');font-weight:700}
+  :root{--pet-font:'Caveat','Segoe Script',cursive;--pet-ink:#1F3528;--pet-halo:#EEF6E2;--pet-pop:#E8456E}
+</style>
+</head>
+<body>
+<script src="../pets/pets.js"></script>
+<script>
+const api = window.overlayApi || { ready(){}, hover(){}, deliver(i){ console.log('deliver', i); }, onNoteRect(){}, onRemind(){}, onCmd(){} };
+let note = { x: 0, y: 0, w: 0, h: 0, visible: false };
+
+const pets = Pets.mount(document.body, {
+  floorMargin: 0, sound: true,
+  surfaces: () => note.visible ? [{ id: 'note', x1: note.x + 16, x2: note.x + note.w - 16, y: note.y + 6 }] : [],
+  onHover: over => api.hover(over),
+  onDeliver: i => api.deliver({ text: i.text, species: i.species, style: i.style, caption: i.caption })
+});
+
+api.onNoteRect(r => { note = r; });
+api.onRemind(text => pets.remind(text, { anchor: () => ({ x: note.x + note.w / 2, y: note.y + note.h * .42, top: note.y }) }));
+api.onCmd(c => {
+  if (c.type === 'toggle') { const p = pets.get(c.species); p ? pets.remove(p) : pets.add(c.species); }
+  if (c.type === 'set') { pets.clear(); c.species.forEach(s => pets.add(s)); }
+  if (c.type === 'park') pets.parkAll();
+  if (c.type === 'roam') pets.setRoaming(true);
+  if (c.type === 'sound') pets.setSound(c.on);
+  if (c.type === 'scale') pets.setScale(c.k);
+});
+window.pets = pets;
+api.ready();   // tells the note we're up, so it can say which pets to bring
+</script>
+</body>
+</html>

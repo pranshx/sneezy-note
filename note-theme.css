@@ -1,0 +1,123 @@
+/* ==========================================================================
+   Sneezy Note — "scrapbook desk" theme
+   Matte paper, washi tape, a torn bottom edge, hand-drawn checkboxes.
+   Four themes: matcha (default), lilac, butter, night  ->  <html data-theme="lilac">
+   Markup it styles:  .note-shell > .note { header, #list li, .add, .foot, .slip }
+   ========================================================================== */
+@font-face{font-family:'Patrick Hand';src:url('fonts/patrick-hand-latin-400-normal.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Caveat';src:url('fonts/caveat-latin-700-normal.woff2') format('woff2');font-weight:700;font-display:swap}
+
+:root{
+  --hand:'Patrick Hand','Segoe Print','Comic Sans MS',cursive;
+  --marker:'Caveat','Segoe Script','Bradley Hand',cursive;
+  /* matcha */
+  --paper:#D6E6C0; --paper-edge:#C3D8A8; --ink:#1F3528; --ink-soft:#5A7262; --accent:#FF6F91;
+  --line:rgba(31,53,40,.17); --tape:#FFD0DC; --tape-line:#fff; --field:rgba(255,255,255,.5);
+  --grain:.5; --pet-ink:#1F3528; --pet-halo:#EEF6E2; --pet-pop:#E8456E; --sheet-shadow:rgba(31,53,40,.5);
+}
+:root[data-theme=lilac]{--paper:#DAD4FF;--paper-edge:#C7BFF5;--ink:#2A2160;--ink-soft:#6A62A0;--accent:#FF6FA5;--line:rgba(42,33,96,.18);--tape:#BDEBDD;--field:rgba(255,255,255,.55);--pet-ink:#2A2160;--pet-halo:#F0EDFF;--pet-pop:#E0447F;--sheet-shadow:rgba(42,33,96,.5)}
+:root[data-theme=butter]{--paper:#FFE9A6;--paper-edge:#F6D97C;--ink:#3A2A14;--ink-soft:#8A7447;--accent:#3E7BFA;--line:rgba(58,42,20,.17);--tape:#BFE0FF;--field:rgba(255,255,255,.55);--pet-ink:#3A2A14;--pet-halo:#FFF6D6;--pet-pop:#2F66E0;--sheet-shadow:rgba(58,42,20,.5)}
+:root[data-theme=night]{--paper:#2B2E5E;--paper-edge:#23264F;--ink:#F3EFFF;--ink-soft:#A9A8DA;--accent:#FFC857;--line:rgba(255,255,255,.14);--tape:#7C6CFF;--tape-line:#C9C2FF;--field:rgba(255,255,255,.1);--grain:.25;--pet-ink:#F3EFFF;--pet-halo:#1B1D45;--pet-pop:#FFC857;--sheet-shadow:rgba(0,0,0,.6)}
+
+*{box-sizing:border-box}
+.note-shell,.note-shell *{font-family:var(--hand)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* the shell carries the shadow (clip-path would cut it off the paper itself) */
+.note-shell{position:relative;filter:drop-shadow(0 16px 20px var(--sheet-shadow)) drop-shadow(0 2px 2px rgba(0,0,0,.18));
+  transform:rotate(-1deg);animation:note-in .7s cubic-bezier(.2,1.3,.4,1) both}
+.note-shell.bump{animation:note-bump .42s ease-out}
+@keyframes note-in{from{opacity:0;transform:translateY(-34px) rotate(-6deg)}to{opacity:1;transform:rotate(-1deg)}}
+@keyframes note-bump{0%,100%{transform:rotate(-1deg)}25%{transform:rotate(-1.8deg) translate(-3px,2px)}55%{transform:rotate(-.3deg) translate(3px,-1px)}80%{transform:rotate(-1.2deg) translate(-1px,0)}}
+
+.note{
+  position:relative;display:flex;flex-direction:column;min-height:0;color:var(--ink);
+  padding:26px 20px 22px;
+  background-color:var(--paper);
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='.55'/></svg>"),
+    radial-gradient(120% 70% at 20% 0%,rgba(255,255,255,.28),transparent 60%),
+    linear-gradient(180deg,transparent 70%,var(--paper-edge));
+  background-blend-mode:soft-light,normal,normal;
+  border-radius:4px 4px 0 0;
+  clip-path:polygon(0 0, 100% 0, 100% calc(100% - 4px), 100.00% calc(100% - 5px), 97.06% calc(100% - 3px), 94.12% calc(100% - 1px), 91.18% calc(100% - 2px), 88.24% calc(100% - 4px), 85.29% calc(100% - 1px), 82.35% calc(100% - 2px), 79.41% calc(100% - 6px), 76.47% calc(100% - 4px), 73.53% calc(100% - 2px), 70.59% calc(100% - 0px), 67.65% calc(100% - 3px), 64.71% calc(100% - 0px), 61.76% calc(100% - 6px), 58.82% calc(100% - 0px), 55.88% calc(100% - 3px), 52.94% calc(100% - 1px), 50.00% calc(100% - 0px), 47.06% calc(100% - 6px), 44.12% calc(100% - 1px), 41.18% calc(100% - 3px), 38.24% calc(100% - 1px), 35.29% calc(100% - 6px), 32.35% calc(100% - 6px), 29.41% calc(100% - 1px), 26.47% calc(100% - 0px), 23.53% calc(100% - 3px), 20.59% calc(100% - 0px), 17.65% calc(100% - 5px), 14.71% calc(100% - 1px), 11.76% calc(100% - 1px), 8.82% calc(100% - 0px), 5.88% calc(100% - 6px), 2.94% calc(100% - 2px), 0.00% calc(100% - 5px), 0 calc(100% - 4px));
+}
+/* washi tape */
+.note-shell::before{
+  content:"";position:absolute;z-index:3;top:-13px;left:50%;width:104px;height:28px;margin-left:-52px;transform:rotate(2.5deg);
+  background:repeating-linear-gradient(135deg,var(--tape) 0 9px,color-mix(in srgb,var(--tape) 70%,var(--tape-line,#fff)) 9px 18px);
+  opacity:.92;box-shadow:0 1px 2px rgba(0,0,0,.18);
+  clip-path:polygon(0 8%,3% 0,6% 10%,9% 0,12% 8%,15% 0,100% 0,97% 14%,100% 28%,97% 42%,100% 56%,97% 70%,100% 84%,97% 100%,3% 100%,0 86%,3% 72%,0 58%,3% 44%,0 30%,3% 16%);
+}
+
+/* header */
+.note header{display:flex;align-items:baseline;gap:10px;padding-bottom:4px;-webkit-app-region:drag}
+.note h1{position:relative;margin:0;font-family:var(--marker);font-weight:700;font-size:42px;line-height:1;letter-spacing:.3px}
+.note h1 .squig{position:absolute;left:-2px;right:-6px;bottom:-9px;width:calc(100% + 8px);height:10px;overflow:visible}
+.note h1 .squig path{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-dasharray:140;stroke-dashoffset:140;animation:draw 1s .5s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.note #count,.note .date{color:var(--ink-soft);font-size:16px}
+.note #count{flex:1}
+.tools{display:flex;gap:2px;-webkit-app-region:no-drag}
+.tools button{width:28px;height:28px;border:0;background:transparent;border-radius:50%;cursor:pointer;display:grid;place-items:center;opacity:.6;transition:opacity .15s,background .15s,transform .15s}
+.tools button:hover{opacity:1;background:var(--line);transform:rotate(8deg)}
+
+/* lined list */
+#list{list-style:none;margin:14px -6px 0;padding:0 6px;flex:1;min-height:0;overflow-y:auto;
+  background:repeating-linear-gradient(180deg,transparent 0 33px,var(--line) 33px 34px);scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+#list li{height:34px;display:flex;align-items:center;gap:10px;font-size:20px}
+#list li .t{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-top:3px;
+  background:linear-gradient(var(--accent),var(--accent)) no-repeat 0 62%/0 2.5px;transition:background-size .4s ease,color .3s}
+#list li.done .t{background-size:100% 2.5px;color:var(--ink-soft)}
+#list li .when{margin-left:auto;white-space:nowrap;font-size:14px;padding:1px 8px 0;border-radius:999px;background:var(--field);color:var(--ink-soft)}
+#list li .del{margin-left:0;border:0;background:none;cursor:pointer;opacity:0;font-size:20px;line-height:1;padding:0 2px;color:var(--ink-soft);transition:opacity .15s}
+#list li:hover .del,#list li .del:focus-visible{opacity:1}
+.empty{height:auto!important;padding:16px 4px 0;font-family:var(--marker)!important;font-size:27px!important;line-height:1.1;color:var(--ink-soft);display:block!important}
+
+/* hand-drawn checkbox: <button class="check"><svg viewBox="0 0 24 24"><path class="ring" .../><path class="tick" .../></svg></button> */
+.check{flex:none;width:26px;height:26px;border:0;background:none;cursor:pointer;padding:0;margin-top:3px;transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
+.check:hover{transform:rotate(-8deg) scale(1.1)}
+.check svg{width:100%;height:100%;overflow:visible}
+.check .ring{fill:transparent;stroke:var(--ink);stroke-width:1.9;stroke-linecap:round;transition:fill .3s}
+.check .tick{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:22;stroke-dashoffset:22;transition:stroke-dashoffset .35s ease-out .05s}
+li.done .check .tick{stroke-dashoffset:0}
+li.done .check .ring{fill:color-mix(in srgb,var(--accent) 22%,transparent)}
+
+/* add row */
+.add{display:flex;gap:8px;align-items:center;margin-top:12px}
+.add input[type=text]{flex:1;min-width:0;border:0;border-radius:999px;background:var(--field);padding:8px 14px;font-size:18px;transition:box-shadow .2s}
+.add input[type=text]::placeholder{color:var(--ink-soft)}
+.add input[type=text]:focus{outline:none;box-shadow:0 0 0 2px var(--accent)}
+.add input[type=time]{width:96px;border:0;border-radius:999px;background:var(--field);padding:7px 10px;font-size:15px}
+.add button{flex:none;width:34px;height:34px;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:24px;line-height:1;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.16);transition:transform .15s cubic-bezier(.3,1.6,.5,1)}
+.add button:hover{transform:rotate(90deg) scale(1.08)}
+.add button:active{transform:translateY(2px);box-shadow:none}
+
+.foot{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:14px;color:var(--ink-soft);flex-wrap:wrap}
+.foot input[type=number]{width:48px;border:0;border-radius:8px;background:var(--field);padding:2px 4px;font-size:14px;text-align:center}
+.foot label{display:flex;align-items:center;gap:5px;cursor:pointer}
+.foot input[type=checkbox]{accent-color:var(--accent)}
+
+/* the slip a pet hands over */
+.slip{position:absolute;z-index:5;left:16px;right:16px;top:78px;display:none;padding:18px 18px 14px;border-radius:4px;
+  background:#FFFEFA;color:#262A57;box-shadow:0 14px 26px -8px rgba(0,0,0,.45);transform-origin:50% 120%;
+  border-left:7px solid var(--slip-c,var(--accent))}
+.slip::before{content:"";position:absolute;top:-10px;right:22px;width:56px;height:20px;transform:rotate(4deg);background:var(--slip-c,var(--accent));opacity:.55}
+.slip[data-species=dog]{--slip-c:#E9A560}.slip[data-species=cat]{--slip-c:#7C6CFF}.slip[data-species=bunny]{--slip-c:#FF8FAF}.slip[data-species=fox]{--slip-c:#F26B3A}.slip[data-species=cloud]{--slip-c:#34D8FF}
+.slip.show{display:block;animation:slip-in .55s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes slip-in{from{transform:scale(.15) rotate(10deg);opacity:0}to{transform:scale(1) rotate(-2deg);opacity:1}}
+.slip small{display:block;font-size:15px;color:#6C6E93}
+.slip p{margin:4px 0 14px;font-family:var(--marker);font-weight:700;font-size:36px;line-height:1;word-break:break-word;color:#262A57}
+.slip .row{display:flex;gap:8px}
+.slip button{flex:1;border:0;border-radius:999px;padding:8px 10px;font-size:17px;cursor:pointer;transition:filter .15s,transform .15s}
+.slip .ok{background:#262A57;color:#fff}.slip .later{background:rgba(124,108,255,.16);color:#262A57}
+.slip button:hover{filter:brightness(1.1);transform:translateY(-1px)}
+
+/* tucked-away pill */
+.pill{border:0;cursor:pointer;background:var(--paper);color:var(--ink);padding:8px 16px 9px;border-radius:4px 4px 4px 16px;font-size:18px;box-shadow:0 8px 16px -8px var(--sheet-shadow);transform:rotate(-2deg)}
+
+@media (prefers-reduced-motion:reduce){
+  .note-shell,.slip.show,.note h1 .squig path{animation:none!important}
+  .note h1 .squig path{stroke-dashoffset:0}
+}

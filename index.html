@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en" data-theme="matcha">
+<head>
+<meta charset="utf-8">
+<title>Sneezy Note</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="note-theme.css">
+<style>
+html,body{margin:0;height:100%;background:transparent;overflow:hidden;user-select:none;-webkit-user-select:none}
+#app{position:relative;height:100vh;padding:20px 16px 18px}
+#shell{height:100%}
+#shell .note{height:100%}
+header{-webkit-app-region:no-drag;cursor:move}
+
+/* ---------- focus card (not covered by note-theme.css) ---------- */
+.focus-card{position:relative;margin:12px 0 6px;padding:12px 14px 12px 16px;border-radius:10px;
+  background:var(--field);border:2px solid var(--line);border-left:6px solid var(--accent-p, var(--accent));
+  color:var(--ink);transform:rotate(.5deg);box-shadow:0 8px 16px -8px rgba(0,0,0,.3)}
+.focus-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.focus-label{font-size:12px;letter-spacing:.4px;color:var(--ink-soft);text-transform:uppercase}
+.focus-text{margin:3px 0 10px;font-family:var(--marker);font-weight:700;font-size:clamp(19px,7vw,26px);line-height:1.2;word-break:break-word}
+.focus-actions{display:flex;gap:6px}
+.focus-actions button{flex:1;border:0;border-radius:999px;padding:7px 8px;font-size:14px;cursor:pointer;font-weight:700;transition:filter .15s}
+.focus-actions .f-done{background:var(--ink);color:var(--paper)}
+.focus-actions .f-later{background:var(--field);color:var(--ink)}
+.focus-actions .f-send{background:transparent;color:var(--ink-soft);border:1.5px dashed var(--line)}
+.focus-actions button:hover{filter:brightness(1.1)}
+.empty-focus{margin:18px 0 10px;font-family:var(--marker);font-weight:700;font-size:22px;color:var(--ink-soft);text-align:center}
+
+.due-badge{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--line);color:var(--ink-soft);white-space:nowrap;flex:none}
+.due-badge:empty{display:none}
+.due-badge.soon{background:rgba(242,165,65,.35);color:#7a4e10}
+.due-badge.overdue{background:rgba(226,75,107,.3);color:#8a1c38;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.55}}
+
+.toggle-all{display:block;width:100%;text-align:center;border:0;background:transparent;color:var(--ink-soft);
+  font-family:var(--hand);font-size:13px;padding:5px;cursor:pointer;border-radius:6px;margin-bottom:2px}
+.toggle-all:hover{background:var(--line);color:var(--ink)}
+
+/* ---------- priority dots (own feature, kept independent of paper theme) ---------- */
+.p-dot{flex:none;width:12px;height:12px;cursor:pointer;margin-top:3px;border:0;padding:0;
+  clip-path:polygon(50% 0%,80% 10%,100% 42%,88% 76%,58% 100%,28% 93%,0% 63%,10% 24%);
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.p-dot.p-high{background:#FF3D7F} .p-dot.p-med{background:#FFB23D} .p-dot.p-low{background:#2EE6A6}
+#list li .when.soon{color:#7a4e10;font-weight:700}
+#list li .when.overdue{color:#8a1c38;font-weight:700}
+
+/* ---------- add row extras note-theme.css doesn't cover ---------- */
+.add{flex-wrap:wrap}
+.add-row{display:flex;gap:8px;align-items:center;flex:1 1 100%}
+.prio{display:flex;gap:4px;background:var(--line);border-radius:10px;padding:4px;flex:none}
+.prio-btn{border:0;background:transparent;border-radius:8px;padding:6px 13px;font-size:14px;cursor:pointer;color:var(--ink-soft);font-family:var(--hand);min-width:42px;transition:background .15s,color .15s}
+.prio-btn.active{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+
+/* ---------- pet picker row (from the reference app) ---------- */
+.petrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:14px;color:var(--ink-soft)}
+.petrow button{border:0;border-radius:999px;padding:2px 10px 3px;background:var(--field);color:var(--ink);cursor:pointer;font-size:15px;transition:transform .15s,background .15s}
+.petrow button:hover{transform:translateY(-1px)}
+.petrow button.on{background:var(--ink);color:var(--paper)}
+.petrow .sep{flex:1}
+#sizerow{margin-top:2px}
+
+/* ---------- concise vs expanded ---------- */
+.note:not(.is-expanded) #list,
+.note:not(.is-expanded) .add,
+.note:not(.is-expanded) .petrow,
+.note:not(.is-expanded) .foot{display:none}
+
+/* ---------- tuck away ---------- */
+.collapsed #shell{display:none}
+.pill{display:none;position:absolute;left:14px;bottom:26px}
+.collapsed .pill{display:block}
+.collapsed #app{padding:0;justify-content:flex-end;display:flex}
+
+/* ---------- custom resize handles ---------- */
+.rz{position:absolute;z-index:20}
+.rz-e{top:0;right:0;width:7px;height:100%;cursor:ew-resize}
+.rz-w{top:0;left:0;width:7px;height:100%;cursor:ew-resize}
+.rz-s{left:0;bottom:0;width:100%;height:7px;cursor:ns-resize}
+.rz-n{left:0;top:0;width:100%;height:7px;cursor:ns-resize}
+.rz-se{right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize}
+.rz-sw{left:0;bottom:0;width:14px;height:14px;cursor:nesw-resize}
+.rz-ne{right:0;top:0;width:14px;height:14px;cursor:nesw-resize}
+.rz-nw{left:0;top:0;width:14px;height:14px;cursor:nwse-resize}
+.collapsed .rz{display:none}
+
+@media (prefers-reduced-motion:reduce){
+  .note-shell{animation:none!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="note-shell" id="shell">
+    <section class="note" id="note">
+      <header>
+        <h1>Today<svg class="squig" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path d="M2 6 C14 1 18 9 30 5 S48 2 58 6 S78 9 98 3"/></svg></h1>
+        <span id="count"></span>
+        <div class="tools">
+          <button id="theme" title="Change paper colour" aria-label="Change paper colour"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1.8c3.4 0 6.2 2.4 6.2 5.4 0 2-1.5 2.6-2.9 2.6H9.7c-.9 0-1.3.8-.8 1.5.5.8 0 2-1.1 2C4.5 13.3 1.8 10.9 1.8 7.8 1.8 4.5 4.6 1.8 8 1.8z"/><circle cx="5.2" cy="6.4" r=".6"/><circle cx="8.2" cy="4.8" r=".6"/><circle cx="10.9" cy="6.6" r=".6"/></svg></button>
+          <button id="tuck" title="Tuck away" aria-label="Tuck away">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 10h8"/></svg>
+          </button>
+          <button id="quit" title="Hide to tray (keeps reminding you in the background)" aria-label="Hide to tray">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="focus-card" id="focusCard">
+        <div class="focus-top">
+          <span class="focus-label">Focus on this</span>
+          <span class="due-badge" id="focusDue"></span>
+        </div>
+        <p class="focus-text" id="focusText"></p>
+        <div class="focus-actions">
+          <button class="f-done" id="focusDone">Done</button>
+          <button class="f-later" id="focusLater">Snooze 10m</button>
+          <button class="f-send" id="focusSend" title="Send a pet with this now">Send a pet</button>
+        </div>
+      </div>
+      <div class="empty-focus" id="emptyFocus">All clear. Nothing urgent</div>
+
+      <button type="button" class="toggle-all" id="toggleAll">Expand</button>
+      <ul id="list" aria-label="All tasks"></ul>
+
+      <form class="add" id="addForm">
+        <input type="text" id="newText" placeholder="Add a task" maxlength="80" autocomplete="off" aria-label="New task">
+        <div class="add-row">
+          <div class="prio" id="prioGroup" role="radiogroup" aria-label="Priority">
+            <button type="button" class="prio-btn" data-p="low" aria-label="Low priority">Low</button>
+            <button type="button" class="prio-btn active" data-p="med" aria-label="Medium priority">Med</button>
+            <button type="button" class="prio-btn" data-p="high" aria-label="High priority">High</button>
+          </div>
+          <input type="time" id="newDeadline" title="Due by this time today" aria-label="Deadline time">
+          <button type="submit" aria-label="Add task">+</button>
+        </div>
+      </form>
+
+      <div class="petrow" id="petrow"><span>Pets</span></div>
+      <div class="petrow" id="sizerow"><span>Size</span></div>
+      <div class="foot">
+        <span>Nudge me every <input type="number" id="nudge" min="0" max="480" step="5" aria-label="Minutes between nudges"> min</span>
+        <label><input type="checkbox" id="sound"> Sounds</label>
+        <label id="loginWrap"><input type="checkbox" id="login"> Start with Windows</label>
+      </div>
+
+      <div class="slip" id="slip" role="alertdialog" aria-live="assertive">
+        <small id="slipCap"></small>
+        <p id="slipText"></p>
+        <div class="row">
+          <button class="ok" id="slipDone">Done</button>
+          <button class="later" id="slipLater">Later (10 min)</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <button class="pill" id="pill"></button>
+
+  <div class="rz rz-n" data-edge="n"></div>
+  <div class="rz rz-s" data-edge="s"></div>
+  <div class="rz rz-e" data-edge="e"></div>
+  <div class="rz rz-w" data-edge="w"></div>
+  <div class="rz rz-ne" data-edge="ne"></div>
+  <div class="rz rz-nw" data-edge="nw"></div>
+  <div class="rz rz-se" data-edge="se"></div>
+  <div class="rz rz-sw" data-edge="sw"></div>
+</div>
+
+<script>
+/* ---------------- storage (Electron, or localStorage when opened in a browser) ---------------- */
+const bridge = window.api || {
+  load: async () => JSON.parse(localStorage.getItem('sneezy') || 'null') || {tasks:[],nudgeMin:45,collapsed:false,expanded:false,login:false,pets:['dog'],sound:true,theme:'matcha'},
+  save: s => localStorage.setItem('sneezy', JSON.stringify(s)),
+  setHeight(){}, alert(){}, setLogin(){}, hide(){}, quit(){}, onFocusAdd(){},
+  dragStart(){}, dragMove(){}, resizeStart(){}, resizeMove(){},
+  petsRemind: t => setTimeout(() => window.__fakeDeliver && window.__fakeDeliver(t), 600),
+  petsCmd(){}, petsNoteRect(){}, onPetDeliver: cb => { window.__fakeDeliver = t => cb({ text: t, species: 'dog', caption: 'Achoo! Don’t forget:' }); },
+  onOverlayReady(){}
+};
+const IN_APP = !!window.api;
+
+const $ = id => document.getElementById(id);
+const app = $('app'), shell = $('shell'), note = $('note'), slip = $('slip');
+const focusCard = $('focusCard'), focusText = $('focusText'), focusDue = $('focusDue'), emptyFocus = $('emptyFocus');
+const toggleAll = $('toggleAll'), list = $('list'), prioGroup = $('prioGroup'), petrow = $('petrow'), sizerow = $('sizerow');
+const THEMES = ['matcha', 'lilac', 'butter', 'night'];
+const SPECIES = ['dog', 'cat', 'bunny', 'fox', 'cloud'];
+const SIZES = { S: .34, M: .45, L: .6 };
+let S = {tasks:[], nudgeMin:45, collapsed:false, expanded:false, login:false, pets:['dog'], sound:true, theme:'matcha', size:'M'};
+let busy = false, lastNudge = Date.now();
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+let saveTimer;
+function persist(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => bridge.save(S), 150); }
+
+/* ---------------- priority + deadlines ---------------- */
+const PRIO_RANK = {high:0, med:1, low:2};
+
+function taskBucket(t){
+  const now = Date.now();
+  if(t.snoozeUntil && t.snoozeUntil > now) return [4, t.snoozeUntil];
+  const dl = t.deadline ? new Date(t.deadline).getTime() : null;
+  if(dl !== null && dl < now) return [0, dl];                 // overdue: most-overdue first
+  return [1 + (PRIO_RANK[t.priority] ?? 1), dl === null ? Infinity : dl];
+}
+function cmpTask(a, b){
+  const [ab, ad] = taskBucket(a), [bb, bd] = taskBucket(b);
+  return ab !== bb ? ab - bb : ad - bd;
+}
+function openSorted(){ return S.tasks.filter(t => !t.done).sort(cmpTask); }
+
+function dueLabel(deadline){
+  if(!deadline) return null;
+  const d = new Date(deadline); if(isNaN(d)) return null;
+  const now = new Date(), diffMin = Math.round((d - now) / 60000), overdue = diffMin < 0, abs = Math.abs(diffMin);
+  const span = abs < 60 ? abs + 'm' : (abs < 1440 ? Math.round(abs / 60) + 'h' : Math.round(abs / 1440) + 'd');
+  if(overdue) return {text: 'Overdue ' + span, cls: 'overdue'};
+  if(diffMin <= 60) return {text: 'Due in ' + span, cls: 'soon'};
+  const sameDay = d.toDateString() === now.toDateString();
+  const clock = d.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
+  return {text: 'Due ' + (sameDay ? clock : d.toLocaleDateString([], {month: 'short', day: 'numeric'}) + ' ' + clock), cls: 'normal'};
+}
+
+/* ---------------- focus card ---------------- */
+function updateFocus(top){
+  focusCard.style.display = top ? '' : 'none';
+  emptyFocus.style.display = top ? 'none' : '';
+  if(!top) return;
+  focusText.textContent = top.text;
+  focusCard.style.setProperty('--accent-p', `var(--p-${top.priority}, var(--accent))`);
+  const badge = dueLabel(top.deadline);
+  focusDue.textContent = badge ? badge.text : '';
+  focusDue.className = 'due-badge' + (badge ? ' ' + badge.cls : '');
+}
+
+/* ---------------- list ---------------- */
+function render(){
+  const ul = list; ul.textContent = '';
+  const open = openSorted(), done = S.tasks.filter(t => t.done);
+  [...open, ...done].forEach((t) => {
+    const li = document.createElement('li'); if(t.done) li.className = 'done';
+    const dot = document.createElement('button'); dot.type = 'button'; dot.className = 'p-dot p-' + t.priority;
+    dot.title = 'Click to change priority'; dot.setAttribute('aria-label', t.priority + ' priority');
+    dot.onclick = () => { const o = ['low','med','high']; t.priority = o[(o.indexOf(t.priority) + 1) % 3]; persist(); render(); };
+    const cb = document.createElement('button'); cb.className = 'check';
+    cb.setAttribute('aria-label', (t.done ? 'Mark not done: ' : 'Mark done: ') + t.text);
+    cb.innerHTML = '<svg viewBox="0 0 24 24"><path class="ring" d="M12 3.2c4.9-.3 8.8 3.4 8.8 8.5s-3.8 8.9-8.9 8.9S3 16.6 3.1 11.9 7.2 3.4 12 3.2z"/><path class="tick" d="M6.6 12.4l3.6 3.7 7.2-8.3"/></svg>';
+    cb.onclick = () => { t.done = !t.done; persist(); render(); };
+    const tx = document.createElement('span'); tx.className = 't'; tx.textContent = t.text; tx.title = t.text;
+    li.append(dot, cb, tx);
+    const badge = dueLabel(t.deadline);
+    if(badge){ const w = document.createElement('span'); w.className = 'when ' + badge.cls; w.textContent = badge.text; li.append(w); }
+    const del = document.createElement('button'); del.className = 'del'; del.textContent = '×';
+    del.setAttribute('aria-label', 'Delete ' + t.text);
+    del.onclick = () => { S.tasks = S.tasks.filter(x => x !== t); persist(); render(); };
+    li.append(del); ul.append(li);
+  });
+  if(!S.tasks.length){
+    const e = document.createElement('li'); e.className = 'empty';
+    e.textContent = 'Nothing yet. Add something and a pet will remind you.'; ul.append(e);
+  }
+  const n = open.length;
+  $('count').textContent = n ? n + ' left' : (S.tasks.length ? 'all done' : '');
+  $('pill').textContent = n ? n + ' left' : 'all done';
+  toggleAll.textContent = (S.expanded ? 'Show less' : 'Expand') + (S.tasks.length ? ` (${S.tasks.length})` : '');
+  updateFocus(open[0]);
+}
+
+/* ---------------- concise / expanded ---------------- */
+function setExpanded(v){
+  S.expanded = v;
+  note.classList.toggle('is-expanded', v);
+  if(!S.collapsed) bridge.setHeight(v ? 560 : 320);
+  persist(); render();
+  setTimeout(reportRect, 260);
+}
+toggleAll.onclick = () => setExpanded(!S.expanded);
+
+function setPrio(p){ [...prioGroup.children].forEach(b => b.classList.toggle('active', b.dataset.p === p)); }
+prioGroup.addEventListener('click', e => { const b = e.target.closest('.prio-btn'); if(b) setPrio(b.dataset.p); });
+
+function timeToDeadline(hhmm){
+  if(!hhmm) return null;
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date(); d.setHours(h, m, 0, 0);
+  return d.toISOString();
+}
+
+$('addForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const text = $('newText').value.trim(); if(!text) return;
+  const priority = prioGroup.querySelector('.prio-btn.active')?.dataset.p || 'med';
+  S.tasks.push({id: uid(), text, priority, deadline: timeToDeadline($('newDeadline').value), done: false, fired: false, snoozeUntil: 0});
+  $('newText').value = ''; $('newDeadline').value = ''; setPrio('med');
+  persist(); render();
+});
+
+$('focusDone').onclick = () => { const t = openSorted()[0]; if(!t) return; t.done = true; persist(); render(); };
+$('focusLater').onclick = () => { const t = openSorted()[0]; if(!t) return; t.snoozeUntil = Date.now() + 10 * 60000; persist(); render(); };
+$('focusSend').onclick = () => { const t = openSorted()[0]; if(!t) return fire('Nothing to do. Go outside.', null); fire(t.text, t); };
+
+$('nudge').addEventListener('change', e => {
+  S.nudgeMin = Math.max(0, Math.min(480, parseInt(e.target.value || '0', 10)));
+  e.target.value = S.nudgeMin; lastNudge = Date.now(); persist();
+});
+$('login').addEventListener('change', e => { S.login = e.target.checked; bridge.setLogin(S.login); persist(); });
+$('sound').addEventListener('change', e => { S.sound = e.target.checked; bridge.petsCmd({ type: 'sound', on: S.sound }); persist(); });
+if(!IN_APP) $('loginWrap').style.display = 'none';
+$('theme').onclick = () => { S.theme = THEMES[(THEMES.indexOf(S.theme) + 1) % THEMES.length]; document.documentElement.dataset.theme = S.theme; persist(); };
+
+/* ---------------- pet picker ---------------- */
+SPECIES.forEach(name => {
+  const b = document.createElement('button'); b.textContent = name; b.dataset.s = name; petrow.append(b);
+  b.onclick = () => { const i = S.pets.indexOf(name); i >= 0 ? S.pets.splice(i, 1) : S.pets.push(name); syncPets(); bridge.petsCmd({ type: 'toggle', species: name }); persist(); };
+});
+const sep = document.createElement('span'); sep.className = 'sep'; petrow.append(sep);
+const parkBtn = document.createElement('button'); parkBtn.textContent = 'Park'; let parked = false;
+parkBtn.title = 'Park the pets where they are, or let them roam again';
+parkBtn.onclick = () => { parked = !parked; parkBtn.textContent = parked ? 'Roam' : 'Park'; bridge.petsCmd({ type: parked ? 'park' : 'roam' }); };
+petrow.append(parkBtn);
+Object.keys(SIZES).forEach(n => {
+  const b = document.createElement('button'); b.textContent = n; b.dataset.z = n; sizerow.append(b);
+  b.onclick = () => { S.size = n; syncPets(); bridge.petsCmd({ type: 'scale', k: SIZES[n] }); persist(); };
+});
+function syncPets(){
+  petrow.querySelectorAll('button[data-s]').forEach(b => b.classList.toggle('on', S.pets.includes(b.dataset.s)));
+  sizerow.querySelectorAll('button[data-z]').forEach(b => b.classList.toggle('on', S.size === b.dataset.z));
+}
+
+/* ---------------- tuck / untuck ---------------- */
+function setCollapsed(c){
+  S.collapsed = c; app.classList.toggle('collapsed', c);
+  bridge.setHeight(c ? 170 : (S.expanded ? 560 : 320)); persist();
+  setTimeout(reportRect, 260);
+}
+$('tuck').onclick = () => setCollapsed(true);
+$('pill').onclick = () => setCollapsed(false);
+$('quit').onclick = () => bridge.hide();
+
+/* tell the pets where the paper is, so they can sit on top of it */
+function reportRect(){
+  const r = shell.getBoundingClientRect(), hidden = S.collapsed;
+  bridge.petsNoteRect({ x: r.left, y: r.top, w: hidden ? 0 : r.width, h: hidden ? 0 : r.height });
+}
+window.addEventListener('resize', reportRect);
+
+/* ---------------- reminders: a pet delivers, the note shows the slip ---------------- */
+function showSlip(text, info){
+  $('slipCap').textContent = (info && info.caption) || 'Don’t forget:';
+  $('slipText').textContent = text;
+  slip.dataset.species = (info && info.species) || '';
+  slip.classList.remove('show'); void slip.offsetWidth; slip.classList.add('show');
+  if(S.collapsed) setCollapsed(false);
+  return new Promise(resolve => {
+    const finish = how => { clearTimeout(to); slip.classList.remove('show'); $('slipDone').onclick = $('slipLater').onclick = null; resolve(how); };
+    $('slipDone').onclick = () => finish('done');
+    $('slipLater').onclick = () => finish('later');
+    const to = setTimeout(() => finish('later'), 120000);
+    $('slipDone').focus({preventScroll:true});
+  });
+}
+
+let pendingText = null, pendingResolve = null, pendingTimer = null;
+function deliver(text){
+  bridge.alert();
+  bridge.petsRemind(text);
+  return new Promise(resolve => {
+    pendingText = text; pendingResolve = resolve;
+    pendingTimer = setTimeout(() => {
+      if(pendingResolve){
+        const r = pendingResolve; pendingResolve = null;
+        showSlip(text, { caption: 'Don’t forget:', species: 'dog' }).then(r);
+      }
+    }, 45000);
+  });
+}
+bridge.onPetDeliver(info => {
+  if(!pendingResolve) return;
+  clearTimeout(pendingTimer);
+  const r = pendingResolve; pendingResolve = null;
+  showSlip(info.text || pendingText, info).then(r);
+});
+bridge.onOverlayReady(() => {
+  bridge.petsCmd({ type: 'scale', k: SIZES[S.size] || .45 });
+  bridge.petsCmd({ type: 'set', species: S.pets });
+  bridge.petsCmd({ type: 'sound', on: S.sound });
+  setTimeout(reportRect, 100);
+});
+
+const queue = [];
+async function pump(){
+  if(busy) return; busy = true;
+  while(queue.length){
+    const job = queue[0];
+    const how = await deliver(job.text);
+    queue.shift();
+    if(job.task){
+      if(how === 'done') job.task.done = true;
+      else job.task.snoozeUntil = Date.now() + 10 * 60000;
+      persist(); render();
+    }
+  }
+  busy = false; lastNudge = Date.now();
+}
+const fire = (text, task) => { queue.push({text, task}); pump(); };
+
+/* ---------------- move + resize (custom, since OS-native drag regions aren't reliable everywhere) ---------------- */
+function makeDraggable(el, excludeSelector){
+  el.addEventListener('mousedown', e => {
+    if(e.button !== 0) return;
+    if(excludeSelector && e.target.closest(excludeSelector)) return;
+    e.preventDefault();
+    const startX = e.screenX, startY = e.screenY;
+    document.body.style.userSelect = 'none';
+    bridge.dragStart();
+    const onMove = me => bridge.dragMove(me.screenX - startX, me.screenY - startY);
+    const onUp = () => { document.body.style.userSelect = ''; window.removeEventListener('mousemove', onMove); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp, { once: true });
+  });
+}
+makeDraggable(note.querySelector('header'), '.tools');
+
+document.querySelectorAll('.rz').forEach(h => {
+  h.addEventListener('mousedown', e => {
+    if(e.button !== 0) return;
+    e.preventDefault(); e.stopPropagation();
+    const startX = e.screenX, startY = e.screenY;
+    document.body.style.userSelect = 'none';
+    bridge.resizeStart(h.dataset.edge);
+    const onMove = me => bridge.resizeMove(me.screenX - startX, me.screenY - startY);
+    const onUp = () => { document.body.style.userSelect = ''; window.removeEventListener('mousemove', onMove); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp, { once: true });
+  });
+});
+
+/* ---------------- scheduler ---------------- */
+function tick(){
+  const now = Date.now();
+  S.tasks.forEach(t => {
+    if(t.done || queue.some(j => j.task === t)) return;
+    let due = false;
+    if(t.deadline && !t.fired && new Date(t.deadline).getTime() <= now) due = true;
+    if(t.snoozeUntil && now >= t.snoozeUntil) due = true;
+    if(due){ t.fired = true; t.snoozeUntil = 0; persist(); fire(t.text, t); }
+  });
+  const open = openSorted();
+  if(S.nudgeMin > 0 && open.length && !busy && Date.now() - lastNudge >= S.nudgeMin * 60000){
+    lastNudge = Date.now(); fire(open[0].text, open[0]);
+  }
+}
+
+/* ---------------- boot ---------------- */
+(async () => {
+  S = Object.assign(S, await bridge.load());
+  if(!Array.isArray(S.pets)) S.pets = ['dog'];
+  document.documentElement.dataset.theme = S.theme || 'matcha';
+  $('nudge').value = S.nudgeMin; $('login').checked = !!S.login; $('sound').checked = S.sound !== false;
+  app.classList.toggle('collapsed', !!S.collapsed);
+  note.classList.toggle('is-expanded', !!S.expanded);
+  syncPets(); render();
+  setTimeout(reportRect, 900);                      // after the drop-in animation settles
+  setInterval(tick, 15000); setTimeout(tick, 1500);
+  bridge.onFocusAdd && bridge.onFocusAdd(() => { if(S.collapsed) setCollapsed(false); if(!S.expanded) setExpanded(true); $('newText').focus(); });
+  window.__sneezy = {S, fire, cmpTask, dueLabel, openSorted};   // handy for testing
+})();
+</script>
+</body>
+</html>

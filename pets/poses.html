@@ -1,0 +1,18 @@
+<!doctype html><meta charset=utf-8>
+<style>body{margin:0;background:#CFE0B8;font:12px sans-serif}
+.row{display:flex}.cell{position:relative;width:230px;height:190px;border:1px dashed rgba(0,0,0,.15)}
+.cell b{position:absolute;left:4px;top:2px;font-weight:400;opacity:.6}</style>
+<div id=g></div>
+<script src="pets.js"></script>
+<script>
+const poses=['stand','sit','lie','sleep','stretch','groom','windup2','achoo','happy','crouch','swatWind','thumpUp'];
+const g=document.getElementById('g');
+for(const sp of Pets.SPECIES){
+  const row=document.createElement('div');row.className='row';g.append(row);
+  for(const po of poses){
+    const c=document.createElement('div');c.className='cell';c.innerHTML='<b>'+sp+' · '+po+'</b>';row.append(c);
+    const m=Pets.mount(c,{sound:false,floorMargin:8,petScale:1});
+    const p=m.add(sp,{x:115,dir:1});p.roam=false;p.plan=[{t:'pose',name:po,dur:Infinity}];
+  }
+}
+</script>

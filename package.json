@@ -1,0 +1,32 @@
+{
+  "name": "sneezy-note",
+  "version": "1.0.0",
+  "description": "A sticky note that stays on your screen, with a dog who sneezes your reminders onto it.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "local.sneezynote",
+    "productName": "Sneezy Note",
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "note-theme.css",
+      "assets/**/*",
+      "fonts/**/*",
+      "pets/**/*",
+      "overlay/**/*"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "assets/icon.png"
+    }
+  }
+}
