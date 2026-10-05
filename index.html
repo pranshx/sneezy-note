@@ -49,7 +49,7 @@ header{-webkit-app-region:no-drag;cursor:move}
 .add{flex-wrap:wrap}
 .add-row{display:flex;gap:8px;align-items:center;flex:1 1 100%}
 .prio{display:flex;gap:4px;background:var(--line);border-radius:10px;padding:4px;flex:none}
-.prio-btn{border:0;background:transparent;border-radius:8px;padding:6px 13px;font-size:14px;cursor:pointer;color:var(--ink-soft);font-family:var(--hand);min-width:42px;transition:background .15s,color .15s}
+.prio-btn{border:0;background:transparent;border-radius:8px;padding:6px 10px;font-size:15px;cursor:pointer;color:var(--ink-soft);font-family:var(--hand);min-width:30px;text-align:center;transition:background .15s,color .15s}
 .prio-btn.active{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.18)}
 
 /* ---------- pet picker row (from the reference app) ---------- */
@@ -59,8 +59,6 @@ header{-webkit-app-region:no-drag;cursor:move}
 .petrow button.on{background:var(--ink);color:var(--paper)}
 .petrow .sep{flex:1}
 #sizerow{margin-top:2px}
-.quit-link{border:0;background:none;padding:0;font:inherit;font-size:13px;color:var(--ink-soft);opacity:.7;cursor:pointer;text-decoration:underline;margin-left:auto}
-.quit-link:hover{opacity:1}
 
 /* ---------- concise vs expanded ---------- */
 .note:not(.is-expanded) #list,
@@ -106,6 +104,9 @@ header{-webkit-app-region:no-drag;cursor:move}
           <button id="quit" title="Hide to tray (keeps reminding you in the background)" aria-label="Hide to tray">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>
           </button>
+          <button id="quitApp" title="Quit Sneezy Note completely" aria-label="Quit completely">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 2.2v4.3"/><path d="M4.3 3.4a5 5 0 1 0 5.4 0"/></svg>
+          </button>
         </div>
       </header>
 
@@ -130,9 +131,9 @@ header{-webkit-app-region:no-drag;cursor:move}
         <input type="text" id="newText" placeholder="Add a task" maxlength="80" autocomplete="off" aria-label="New task">
         <div class="add-row">
           <div class="prio" id="prioGroup" role="radiogroup" aria-label="Priority">
-            <button type="button" class="prio-btn" data-p="low" aria-label="Low priority">Low</button>
-            <button type="button" class="prio-btn active" data-p="med" aria-label="Medium priority">Med</button>
-            <button type="button" class="prio-btn" data-p="high" aria-label="High priority">High</button>
+            <button type="button" class="prio-btn" data-p="low" aria-label="Low priority" title="Low priority">L</button>
+            <button type="button" class="prio-btn active" data-p="med" aria-label="Medium priority" title="Medium priority">M</button>
+            <button type="button" class="prio-btn" data-p="high" aria-label="High priority" title="High priority">H</button>
           </div>
           <input type="time" id="newDeadline" title="Due by this time today" aria-label="Deadline time">
           <button type="submit" aria-label="Add task">+</button>
@@ -145,16 +146,11 @@ header{-webkit-app-region:no-drag;cursor:move}
         <span>Nudge me every <input type="number" id="nudge" min="0" max="480" step="5" aria-label="Minutes between nudges"> min</span>
         <label><input type="checkbox" id="sound"> Sounds</label>
         <label id="loginWrap"><input type="checkbox" id="login"> Start with Windows</label>
-        <button type="button" class="quit-link" id="quitApp" title="Exit the app completely">Quit Sneezy Note</button>
       </div>
 
-      <div class="slip" id="slip" role="alertdialog" aria-live="assertive">
+      <div class="slip" id="slip" role="status" aria-live="polite">
         <small id="slipCap"></small>
         <p id="slipText"></p>
-        <div class="row">
-          <button class="ok" id="slipDone">Done</button>
-          <button class="later" id="slipLater">Later (10 min)</button>
-        </div>
       </div>
     </section>
   </div>
@@ -191,7 +187,20 @@ const THEMES = ['matcha', 'lilac', 'butter', 'night'];
 const SPECIES = ['dog', 'cat', 'bunny', 'fox', 'cloud'];
 const SIZES = { S: .34, M: .45, L: .6 };
 let S = {tasks:[], nudgeMin:45, collapsed:false, expanded:false, login:false, pets:['dog'], sound:true, theme:'matcha', size:'M'};
-let busy = false, lastNudge = Date.now();
+let petBusy = false, lastNudge = Date.now();
+const FOCUS_PHRASES = [
+  'Back to it.', 'Eyes up. Let’s go.', 'Still with me?', 'One thing at a time.',
+  'You know what to do.', 'Chop chop.', 'Hey. Focus.', 'Just this one thing.',
+  'Right, where were we?', 'No more tabs.', 'You’ve got this.', 'Quick, before you forget.'
+];
+const CLEAR_PHRASES = ['Nothing to do. Go outside.', 'All clear. Nice.', 'Nothing urgent. Breathe.'];
+const EXCLAIM = { dog:'Achoo!', cat:'Mrrow.', bunny:'Thump thump.', fox:'Yip!', cloud:'Pitter-patter.' };
+let lastPhrase = null;
+function pickPhrase(pool){
+  if(pool.length === 1) return pool[0];
+  let p; do { p = pool[Math.floor(Math.random() * pool.length)]; } while(p === lastPhrase);
+  return lastPhrase = p;
+}
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -302,7 +311,7 @@ $('addForm').addEventListener('submit', e => {
 
 $('focusDone').onclick = () => { const t = openSorted()[0]; if(!t) return; t.done = true; persist(); render(); };
 $('focusLater').onclick = () => { const t = openSorted()[0]; if(!t) return; t.snoozeUntil = Date.now() + 10 * 60000; persist(); render(); };
-$('focusSend').onclick = () => { const t = openSorted()[0]; if(!t) return fire('Nothing to do. Go outside.', null); fire(t.text, t); };
+$('focusSend').onclick = () => nudgePet();
 
 $('nudge').addEventListener('change', e => {
   S.nudgeMin = Math.max(0, Math.min(480, parseInt(e.target.value || '0', 10)));
@@ -350,41 +359,30 @@ function reportRect(){
 }
 window.addEventListener('resize', reportRect);
 
-/* ---------------- reminders: a pet delivers, the note shows the slip ---------------- */
-function showSlip(text, info){
-  $('slipCap').textContent = (info && info.caption) || 'Don’t forget:';
+/* ---------------- a pet drops by with a little focus nudge (purely ambient, no task tie-in) ---------------- */
+let slipFadeTimer = null, fallbackTimer = null;
+function showPhrase(text, info){
+  clearTimeout(slipFadeTimer);
+  $('slipCap').textContent = (info && EXCLAIM[info.species]) || '';
   $('slipText').textContent = text;
   slip.dataset.species = (info && info.species) || '';
   slip.classList.remove('show'); void slip.offsetWidth; slip.classList.add('show');
-  if(S.collapsed) setCollapsed(false);
-  return new Promise(resolve => {
-    const finish = how => { clearTimeout(to); slip.classList.remove('show'); $('slipDone').onclick = $('slipLater').onclick = null; resolve(how); };
-    $('slipDone').onclick = () => finish('done');
-    $('slipLater').onclick = () => finish('later');
-    const to = setTimeout(() => finish('later'), 120000);
-    $('slipDone').focus({preventScroll:true});
-  });
+  slipFadeTimer = setTimeout(() => { slip.classList.remove('show'); petBusy = false; }, 4000);
 }
-
-let pendingText = null, pendingResolve = null, pendingTimer = null;
-function deliver(text){
+function nudgePet(){
+  if(petBusy) return;
+  petBusy = true;
+  if(S.collapsed) setCollapsed(false);
+  const phrase = pickPhrase(openSorted().length ? FOCUS_PHRASES : CLEAR_PHRASES);
   bridge.alert();
-  bridge.petsRemind(text);
-  return new Promise(resolve => {
-    pendingText = text; pendingResolve = resolve;
-    pendingTimer = setTimeout(() => {
-      if(pendingResolve){
-        const r = pendingResolve; pendingResolve = null;
-        showSlip(text, { caption: 'Don’t forget:', species: 'dog' }).then(r);
-      }
-    }, 45000);
-  });
+  bridge.petsRemind(phrase);
+  clearTimeout(fallbackTimer);
+  fallbackTimer = setTimeout(() => showPhrase(phrase, { species: S.pets[0] || 'dog' }), 45000);
 }
 bridge.onPetDeliver(info => {
-  if(!pendingResolve) return;
-  clearTimeout(pendingTimer);
-  const r = pendingResolve; pendingResolve = null;
-  showSlip(info.text || pendingText, info).then(r);
+  if(!petBusy) return;
+  clearTimeout(fallbackTimer);
+  showPhrase(info.text, info);
 });
 bridge.onOverlayReady(() => {
   bridge.petsCmd({ type: 'scale', k: SIZES[S.size] || .45 });
@@ -392,23 +390,6 @@ bridge.onOverlayReady(() => {
   bridge.petsCmd({ type: 'sound', on: S.sound });
   setTimeout(reportRect, 100);
 });
-
-const queue = [];
-async function pump(){
-  if(busy) return; busy = true;
-  while(queue.length){
-    const job = queue[0];
-    const how = await deliver(job.text);
-    queue.shift();
-    if(job.task){
-      if(how === 'done') job.task.done = true;
-      else job.task.snoozeUntil = Date.now() + 10 * 60000;
-      persist(); render();
-    }
-  }
-  busy = false; lastNudge = Date.now();
-}
-const fire = (text, task) => { queue.push({text, task}); pump(); };
 
 /* ---------------- move + resize (custom, since OS-native drag regions aren't reliable everywhere) ---------------- */
 function makeDraggable(el, excludeSelector){
@@ -445,15 +426,15 @@ document.querySelectorAll('.rz').forEach(h => {
 function tick(){
   const now = Date.now();
   S.tasks.forEach(t => {
-    if(t.done || queue.some(j => j.task === t)) return;
+    if(t.done) return;
     let due = false;
     if(t.deadline && !t.fired && new Date(t.deadline).getTime() <= now) due = true;
     if(t.snoozeUntil && now >= t.snoozeUntil) due = true;
-    if(due){ t.fired = true; t.snoozeUntil = 0; persist(); fire(t.text, t); }
+    if(due){ t.fired = true; t.snoozeUntil = 0; persist(); nudgePet(); }
   });
   const open = openSorted();
-  if(S.nudgeMin > 0 && open.length && !busy && Date.now() - lastNudge >= S.nudgeMin * 60000){
-    lastNudge = Date.now(); fire(open[0].text, open[0]);
+  if(S.nudgeMin > 0 && open.length && !petBusy && Date.now() - lastNudge >= S.nudgeMin * 60000){
+    lastNudge = Date.now(); nudgePet();
   }
 }
 
@@ -469,7 +450,7 @@ function tick(){
   setTimeout(reportRect, 900);                      // after the drop-in animation settles
   setInterval(tick, 15000); setTimeout(tick, 1500);
   bridge.onFocusAdd && bridge.onFocusAdd(() => { if(S.collapsed) setCollapsed(false); if(!S.expanded) setExpanded(true); $('newText').focus(); });
-  window.__sneezy = {S, fire, cmpTask, dueLabel, openSorted};   // handy for testing
+  window.__sneezy = {S, nudgePet, cmpTask, dueLabel, openSorted};   // handy for testing
 })();
 </script>
 </body>

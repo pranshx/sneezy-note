@@ -108,11 +108,7 @@ li.done .check .ring{fill:color-mix(in srgb,var(--accent) 22%,transparent)}
 .slip.show{display:block;animation:slip-in .55s cubic-bezier(.2,1.5,.4,1) both}
 @keyframes slip-in{from{transform:scale(.15) rotate(10deg);opacity:0}to{transform:scale(1) rotate(-2deg);opacity:1}}
 .slip small{display:block;font-size:15px;color:#6C6E93}
-.slip p{margin:4px 0 14px;font-family:var(--marker);font-weight:700;font-size:36px;line-height:1;word-break:break-word;color:#262A57}
-.slip .row{display:flex;gap:8px}
-.slip button{flex:1;border:0;border-radius:999px;padding:8px 10px;font-size:17px;cursor:pointer;transition:filter .15s,transform .15s}
-.slip .ok{background:#262A57;color:#fff}.slip .later{background:rgba(124,108,255,.16);color:#262A57}
-.slip button:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.slip p{margin:4px 0 2px;font-family:var(--marker);font-weight:700;font-size:36px;line-height:1;word-break:break-word;color:#262A57}
 
 /* tucked-away pill */
 .pill{border:0;cursor:pointer;background:var(--paper);color:var(--ink);padding:8px 16px 9px;border-radius:4px 4px 4px 16px;font-size:18px;box-shadow:0 8px 16px -8px var(--sheet-shadow);transform:rotate(-2deg)}
